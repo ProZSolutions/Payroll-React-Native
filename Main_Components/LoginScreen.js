@@ -21,7 +21,7 @@ import { Colors } from 'react-native/Libraries/NewAppScreen';
 import NetInfo from '@react-native-community/netinfo';
 import APINameComponents from '../Constants/APINameComponents';
 
- const LoginScreen = () => {
+ const LoginScreen = ({ navigation }) => {
   //variabl declaration
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -66,7 +66,7 @@ import APINameComponents from '../Constants/APINameComponents';
     } else {
       // Proceed with login
       setLoading(true);
-      async(username,password,deviceId,versionName);
+      login(username,password,deviceId,StringComponent.VersionCode);
 
       
       // Add login logic here
@@ -76,64 +76,75 @@ import APINameComponents from '../Constants/APINameComponents';
   const login = async (username, password, deviceId, versionName) => {
     try{
         setLoading(true);
-        const api = StringComponent.APIURL+APINameComponents.login;
-        console.log("api_url"," url "+api+" usernae "+username+
+        const apiUrl = StringComponent.APIURL+APINameComponents.login;
+        console.log("api_url"," url "+apiUrl+" usernae "+username+
           " pass "+password+" device id "+deviceId+" version "+StringComponent.VersionCode
         );
 
-        const response = await axios.post(apiUrl, {
-          username:username,
-          password:password,
-          device_id: deviceId,
-          version_name: StringComponent.VersionCode,
+
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            username: username,
+            password: password,
+            device_id: deviceId,
+            version_no: StringComponent.VersionCode,
+          }),
         });
-        
-        if (response.status === 200) {
-          setLoading(false);
-          console.log("api_url","response "+response.data);
-          const { loginInfo, token_type, bearer_token } = response.data;
-          if (loginInfo) {
-            const { employee_No, name, role, role_Name } = loginInfo;
-    
-            if (employee_No) {
-              await AsyncStorage.setItem('AdminEmpNo', employee_No);
-            }
-            if (name) {
-              await AsyncStorage.setItem('AdminName', name);
-            }
-            if (role.length > 0) {
-              await AsyncStorage.setItem('AdminRole', role.join('@'));
-            }
-            if (role_Name.length > 0) {
-              await AsyncStorage.setItem('AdminRoleName', role_Name.join('@'));
-            }
-          }    
-          await AsyncStorage.setItem('username', username);
-          await AsyncStorage.setItem('token', `${token_type} ${bearer_token}`);
-          
-          // Show success message (you need to implement this part in your UI)
-          console.log('Logged In Successfully');
-          
-          // Navigate to Dashboard (you need to implement navigation)
-          // For example, using React Navigation:
-          // navigation.navigate('DashboardNew');
-    
-        }  
-          
-        else{
-          setLoading(false);
-          Alert.alert("Error",response.data.status);
+        const jsonResponse = await response.json();
+        console.log("api_url"," json ",jsonResponse);
+        if (response?.ok) {
+           if(jsonResponse?.status==='success'){
+              if(jsonResponse?.emp_details){
+                const { emp_details, token_type, bearer_token,emp_no } = jsonResponse;
+                console.log("api_url"," emp ",emp_details," no ",emp_details.Employee_No);
+                    if (emp_details) {
+               
+                      if (emp_details?.Employee_No) {
+                        await AsyncStorage.setItem('AdminEmpNo', emp_details.Employee_No);
+                      }
+                      if (emp_details?.Name) {
+                        await AsyncStorage.setItem('AdminName', emp_details.Name);
+                      }
+                      if (emp_details?.Role) {
+                        await AsyncStorage.setItem('AdminRole', emp_details.Role.join('@'));
+                      }
+                      if (emp_details?.Role_Name ) {
+                        await AsyncStorage.setItem('AdminRoleName', emp_details.Role_Name.join('@'));
+                      }
+                    }  
+                    
+                    
+                    
+                    await AsyncStorage.setItem('username', username);
+                    await AsyncStorage.setItem('token', `${token_type} ${bearer_token}`);
+                    Alert.alert('Success'," Login Success");
+                    navigation.navigate('Dashboard');
+                    
+              }
+           }else{
+             Alert.alert('Error',error.message);
+           }
+            
+        } else {
+          console.log("api_url","response nukk ");
+          throw new Error(jsonResponse.error || 'Something went wrong');
         }
 
 
 
 
     }catch(error){
-      if(error.response){
+      if(error?.response){
           Alert.alert('Error',error.response.data); 
       }else{
           Alert.alert('Error',error.message);
       }
+    }finally{
+      setLoading(false);
     }
     
     
@@ -154,6 +165,9 @@ import APINameComponents from '../Constants/APINameComponents';
   const handleBackPress = () => { 
     // Handle the back button press
   };
+  const textToUpperClass =(input)=>{
+    setUsername(input.toUpperCase());
+  }
 
 
   return (
@@ -166,31 +180,33 @@ import APINameComponents from '../Constants/APINameComponents';
       <Text style={CommonStyle.versionCode}>Version Code : {StringComponent.VersionCode}</Text>
 
       <View style={CommonStyle.inputContainer}>
-        <Image source={require('../assets/emp-icon.png')} style={CommonStyle.icon} />
+        <Image source={require('../assets/emp-icon.png')}   style={CommonStyle.icon} />
         <TextInput
-        onChangeText={setUsername}
+        onChangeText={textToUpperClass}
           value={username}
           style={CommonStyle.input}
+           selectionColor={ConColors.n_org}
           placeholder="Emp ID"
-          placeholderTextColor="#000" // Use a color similar to your black
+          placeholderTextColor={ConColors.black}// Use a color similar to your black
         />
       </View>
 
       <View style={CommonStyle.inputContainer}>
         <View style={CommonStyle.passwordContainer}>
-          <Image source={require('../assets/password.png')} style={CommonStyle.icon} />
+          <Image source={require('../assets/password.png')}  style={CommonStyle.icon} />
           <TextInput
+          selectionColor={ConColors.n_org}
           onChangeText={setPassword}
           value={password}
             style={CommonStyle.input}
             placeholder="Password"
             secureTextEntry={!isPasswordVisible}
-            placeholderTextColor="#000" // Use a color similar to your black
+            placeholderTextColor={ConColors.black}  // Use a color similar to your black
           />
           <TouchableOpacity onPress={togglePasswordVisibility}  >
             <Image 
             source={isPasswordVisible ? require('../assets/eye_show.png') : require('../assets/password_hide.png')}
-             style={[CommonStyle.icon,{marginRight:10,tintColor:ConColors.n_org}]} />
+             style={[CommonStyle.icon,{marginRight:10,tintColor:ConColors.n_org}]}   />
           </TouchableOpacity>
         </View>
       </View>

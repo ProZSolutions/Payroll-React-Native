@@ -6,6 +6,10 @@ const Colors = {
     highlight: '#3498db',
     white:'#FFFFFF',
     n_org:'F49D12',
+    black:'#000',
+    success_color:'#0DB984',
+    failure_color:'#FF0854',
+
 
    };
   

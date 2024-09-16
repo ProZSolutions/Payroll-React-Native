@@ -8,10 +8,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 
 import { ImageBackground } from 'react-native';
 import SplashScreen from './Main_Components/SplashScreen';
+  import Dashboard from './Main_Components/Dashboard';
  import LoginScreen from './Main_Components/LoginScreen'; 
- import Dashboard from './Main_Components/Dashboard';
-
- 
 
 const Stack = createStackNavigator();
 
